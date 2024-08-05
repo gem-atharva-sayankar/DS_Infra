@@ -391,7 +391,6 @@ module "codepipeline_server" {
   name                     = "pipeline-${var.environment_name}-backend"
   pipe_role                = module.devops_role.arn_role
   s3_bucket                = module.s3_codepipeline.s3_bucket_id
-  github_token             = var.github_token
   repo_owner               = var.repository_owner
   repo_name                = var.repository_name_backend
   branch                   = var.repository_branch
