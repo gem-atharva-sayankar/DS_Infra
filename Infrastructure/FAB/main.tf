@@ -18,8 +18,8 @@ provider "aws" {
 }
 terraform {
   backend "s3" {
-       bucket = "datasciencefadb-2"
-       key    = "infrastate/terraform.tfstate"
+       bucket = "dsinfra "
+       key    = "sample/terraform.tfstate"
        region = "ap-south-1"
   }
 }
