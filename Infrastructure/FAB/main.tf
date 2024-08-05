@@ -27,6 +27,23 @@ data "aws_vpc" "existing" {
   id = "vpc-00d22b17ac6cf513f"  
 }
 
+
+variable "public_subnet" {
+  type        = list(string)
+  description = "List of private client subnet IDs"
+  default     = ["subnet-063de474d277be466", "subnet-0094dfe3595e342c7"]
+}
+variable "private_client_subnet_ids" {
+  type        = list(string)
+  description = "List of private client subnet IDs"
+  default     = ["subnet-059152206eab04219", "subnet-070f4a30ad7807fa9"]
+}
+variable "private_server_subnet_ids" {
+  type        = list(string)
+  description = "List of private client subnet IDs"
+  default     = ["subnet-0fe3f1c09dbf1c2dd", "subnet-0d32a04344040b064"]
+}
+
 # ------- Random numbers intended to be used as unique identifiers for resources -------
 resource "random_id" "RANDOM_ID" {
   byte_length = "2"
