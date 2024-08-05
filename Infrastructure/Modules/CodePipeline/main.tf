@@ -3,6 +3,13 @@
 /*=======================================================
       AWS CodePipeline for build and deployment
 ========================================================*/
+data "aws_secretsmanager_secret" "fab" {
+  name = "fab"
+}
+
+data "aws_secretsmanager_secret_version" "fab" {
+  secret_id = data.aws_secretsmanager_secret.fab.id
+}
 
 resource "aws_codepipeline" "aws_codepipeline" {
   name     = var.name
@@ -25,7 +32,7 @@ resource "aws_codepipeline" "aws_codepipeline" {
       output_artifacts = ["SourceArtifact"]
 
       configuration = {
-        OAuthToken           = var.github_token
+        OAuthToken           = data.aws_secretsmanager_secret_version.example.secret_string
         Owner                = var.repo_owner
         Repo                 = var.repo_name
         Branch               = var.branch
