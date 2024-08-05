@@ -131,7 +131,7 @@ module "alb_server" {
   source         = "../Modules/ALB"
   create_alb     = true
   name           = "${var.environment_name}-ser"
-  subnets        = [module.networking.public_subnets[0], module.networking.public_subnets[1]]
+  subnets        = var.public_subnet
   security_group = module.security_group_alb_server.sg_id
   target_group   = module.target_group_server_blue.arn_tg
 }
@@ -141,7 +141,7 @@ module "alb_client" {
   source         = "../Modules/ALB"
   create_alb     = true
   name           = "${var.environment_name}-cli"
-  subnets        = [module.networking.public_subnets[0], module.networking.public_subnets[1]]
+  subnets        = var.public_subnet
   security_group = module.security_group_alb_client.sg_id
   target_group   = module.target_group_client_blue.arn_tg
 }
@@ -238,7 +238,7 @@ module "ecs_service_server" {
   ecs_cluster_id      = module.ecs_cluster.ecs_cluster_id
   arn_target_group    = module.target_group_server_blue.arn_tg
   arn_task_definition = module.ecs_taks_definition_server.arn_task_definition
-  subnets_id          = [module.networking.private_subnets_server[0], module.networking.private_subnets_server[1]]
+  subnets_id          = var.private_server_subnet_ids
   container_port      = var.port_app_server
   container_name      = var.container_name["server"]
 }
@@ -253,7 +253,7 @@ module "ecs_service_client" {
   ecs_cluster_id      = module.ecs_cluster.ecs_cluster_id
   arn_target_group    = module.target_group_client_blue.arn_tg
   arn_task_definition = module.ecs_taks_definition_client.arn_task_definition
-  subnets_id          = [module.networking.private_subnets_client[0], module.networking.private_subnets_client[1]]
+  subnets_id          = var.private_client_subnet_ids
   container_port      = var.port_app_client
   container_name      = var.container_name["client"]
 }
