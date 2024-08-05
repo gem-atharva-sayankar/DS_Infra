@@ -32,7 +32,7 @@ resource "aws_codepipeline" "aws_codepipeline" {
       output_artifacts = ["SourceArtifact"]
 
       configuration = {
-        OAuthToken           = data.aws_secretsmanager_secret_version.example.secret_string
+        OAuthToken           = data.aws_secretsmanager_secret_version.fab.secret_string
         Owner                = var.repo_owner
         Repo                 = var.repo_name
         Branch               = var.branch
