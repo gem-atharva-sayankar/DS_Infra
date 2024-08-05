@@ -32,12 +32,7 @@ resource "random_id" "RANDOM_ID" {
 # ------- Account ID -------
 data "aws_caller_identity" "id_current_account" {}
 
-# ------- Networking -------
-module "networking" {
-  source = "../Modules/Networking"
-  cidr   = ["10.120.0.0/16"]
-  name   = var.environment_name
-}
+
 
 # ------- Creating Target Group for the server ALB blue environment -------
 module "target_group_server_blue" {
