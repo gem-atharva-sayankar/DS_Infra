@@ -20,13 +20,18 @@ variable "environment_name" {
     error_message = "Due the this variable is used for concatenation of names of other resources, the value must have less than 23 characters."
   }
 }
+data "aws_secretsmanager_secret" "fab" {
+  name = "fab"
+}
 
+data "aws_secretsmanager_secret_version" "fab" {
+  secret_id = data.aws_secretsmanager_secret.fab.id
+}
 variable "github_token" {
   description = "Personal access token from Github"
   type        = string
   sensitive   = true
-  default      = "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"
-
+  default      = data.aws_secretsmanager_secret_version.example.secret_string
 }
 
 
