@@ -67,7 +67,7 @@ data "aws_caller_identity" "id_current_account" {}
 module "target_group_server_blue" {
   source              = "../Modules/ALB"
   create_target_group = true
-  name                = "tg-${var.environment_name}-s-b"
+  name                = "tg-aig-${var.environment_name}-s-b"
   port                = 80
   protocol            = "HTTP"
   vpc                 = data.aws_vpc.existing.id
@@ -80,7 +80,7 @@ module "target_group_server_blue" {
 module "target_group_server_green" {
   source              = "../Modules/ALB"
   create_target_group = true
-  name                = "tg-${var.environment_name}-s-g"
+  name                = "tg-aig-${var.environment_name}-s-g"
   port                = 80
   protocol            = "HTTP"
   vpc                 = data.aws_vpc.existing.id
@@ -94,7 +94,7 @@ module "target_group_server_green" {
 # ------- Creating Security Group for the server ALB -------
 module "security_group_alb_server" {
   source              = "../Modules/SecurityGroup"
-  name                = "alb-${var.environment_name}-server"
+  name                = "alb-${var.environment_name}-aig-server"
   description         = "Controls access to the server ALB"
   vpc_id              = data.aws_vpc.existing.id
   cidr_blocks_ingress = ["0.0.0.0/0"]
@@ -107,7 +107,7 @@ module "security_group_alb_server" {
 module "alb_server" {
   source         = "../Modules/ALB"
   create_alb     = true
-  name           = "${var.environment_name}-ser"
+  name           = "${var.environment_name}-aig-ser"
   subnets        = var.public_subnet
   security_group = module.security_group_alb_server.sg_id
   target_group   = module.target_group_server_blue.arn_tg
@@ -129,7 +129,7 @@ data "aws_iam_role" "ecs_task_role" {
 # ------- Creating ECS Task Definition for the server -------
 module "ecs_taks_definition_server" {
   source             = "../Modules/ECS/TaskDefinition"
-  name               = "${var.environment_name}-server"
+  name               = "${var.environment_name}-aig-server"
   container_name     = var.container_name["server"]
   execution_role_arn = data.aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = data.aws_iam_role.ecs_task_role.arn
@@ -145,7 +145,7 @@ module "ecs_taks_definition_server" {
 # ------- Creating a server Security Group for ECS TASKS -------
 module "security_group_ecs_task_server" {
   source          = "../Modules/SecurityGroup"
-  name            = "ecs-task-${var.environment_name}-server"
+  name            = "ecs-task-${var.environment_name}-aig-server"
   description     = "Controls access to the server ECS task"
   vpc_id          = data.aws_vpc.existing.id
   ingress_port    = var.port_app_server
@@ -159,7 +159,7 @@ module "security_group_ecs_task_server" {
 module "ecs_service_server" {
   depends_on          = [module.alb_server]
   source              = "../Modules/ECS/Service"
-  name                = "${var.environment_name}-server"
+  name                = "${var.environment_name}-aig-server"
   desired_tasks       = 1
   arn_security_group  = module.security_group_ecs_task_server.sg_id
   ecs_cluster_id      = data.aws_ecs_cluster.existing_cluster.id
@@ -176,7 +176,7 @@ module "ecs_service_server" {
 module "ecs_autoscaling_server" {
   depends_on   = [module.ecs_service_server]
   source       = "../Modules/ECS/Autoscaling"
-  name         = "${var.environment_name}-server"
+  name         = "${var.environment_name}-aig-server"
   cluster_name = data.aws_ecs_cluster.existing_cluster.cluster_name
   min_capacity = 1
   max_capacity = 4
@@ -206,7 +206,7 @@ module "sns" {
 # ------- Creating the server CodeBuild project -------
 module "codebuild_server" {
   source                 = "../Modules/CodeBuild"
-  name                   = "codebuild-${var.environment_name}-server"
+  name                   = "codebuild-${var.environment_name}-aig-server"
   iam_role               = data.aws_iam_role.devops_role.arn
   region                 = var.aws_region
   account_id             = data.aws_caller_identity.id_current_account.account_id
@@ -225,7 +225,7 @@ module "codebuild_server" {
 # ------- Creating the server CodeDeploy project -------
 module "codedeploy_server" {
   source          = "../Modules/CodeDeploy"
-  name            = "Deploy-${var.environment_name}-server"
+  name            = "Deploy-${var.environment_name}-aig-server"
   ecs_cluster     = data.aws_ecs_cluster.existing_cluster.cluster_name
   ecs_service     = module.ecs_service_server.ecs_service_name
   alb_listener    = module.alb_server.arn_listener
@@ -243,7 +243,7 @@ module "codedeploy_server" {
 
 module "codepipeline_server" {
   source                   = "../Modules/CodePipeline"
-  name                     = "pipeline-${var.environment_name}-backend"
+  name                     = "pipeline-${var.environment_name}-aig-backend"
   pipe_role                = data.aws_iam_role.devops_role.arn
   s3_bucket                = module.s3_codepipeline.s3_bucket_id
   repo_owner               = var.repository_owner
