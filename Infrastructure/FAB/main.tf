@@ -147,20 +147,12 @@ module "alb_client" {
 }
 
 # ------- ECS Role -------
-module "ecs_role" {
-  source             = "../Modules/IAM"
-  create_ecs_role    = true
-  name               = var.iam_role_name["ecs"]
-  name_ecs_task_role = var.iam_role_name["ecs_task_role"]
-  # dynamodb_table     = [module.dynamodb_table.dynamodb_table_arn]
+data "aws_iam_role" "ecs_task_execution_role" {
+  name = "ECS-task-excecution-Role"
 }
 
-# ------- Creating a IAM Policy for role -------
-module "ecs_role_policy" {
-  source        = "../Modules/IAM"
-  name          = "ecs-ecr-${var.environment_name}"
-  create_policy = true
-  attach_to     = module.ecs_role.name_role
+data "aws_iam_role" "ecs_task_role" {
+  name = "ECS-task-Role"
 }
 
 # # ------- Creating server ECR Repository to store Docker Images -------
@@ -180,8 +172,8 @@ module "ecs_taks_definition_server" {
   source             = "../Modules/ECS/TaskDefinition"
   name               = "${var.environment_name}-server"
   container_name     = var.container_name["server"]
-  execution_role_arn = module.ecs_role.arn_role
-  task_role_arn      = module.ecs_role.arn_role_ecs_task_role
+  execution_role_arn = data.aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn      = data.aws_iam_role.ecs_task_role.arn
   cpu                = 1024
   memory             = "2048"
   docker_repo        = "851725235990.dkr.ecr.ap-south-1.amazonaws.com/fab_dev:158"
@@ -194,8 +186,8 @@ module "ecs_taks_definition_client" {
   source             = "../Modules/ECS/TaskDefinition"
   name               = "${var.environment_name}-client"
   container_name     = var.container_name["client"]
-  execution_role_arn = module.ecs_role.arn_role
-  task_role_arn      = module.ecs_role.arn_role_ecs_task_role
+  execution_role_arn = data.aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn      = data.aws_iam_role.ecs_task_role.arn
   cpu                = 1024
   memory             = "2048"
   docker_repo        = "851725235990.dkr.ecr.ap-south-1.amazonaws.com/fabfe:11"
@@ -287,34 +279,9 @@ module "s3_codepipeline" {
 }
 
 # ------- Creating IAM roles used during the pipeline excecution -------
-module "devops_role" {
-  source             = "../Modules/IAM"
-  create_devops_role = true
-  name               = var.iam_role_name["devops"]
-}
 
-module "codedeploy_role" {
-  source                 = "../Modules/IAM"
-  create_codedeploy_role = true
-  name                   = var.iam_role_name["codedeploy"]
-}
-
-# # ------- Creating an IAM Policy for role ------- 
-module "policy_devops_role" {
-  source                = "../Modules/IAM"
-  name                  = "devops-${var.environment_name}"
-  create_policy         = true
-  attach_to             = module.devops_role.name_role
-  create_devops_policy  = true
-  # ecr_repositories      = [module.ecr_server.ecr_repository_arn, module.ecr_client.ecr_repository_arn]
-  # code_build_projects   = [module.codebuild_client.project_arn, module.codebuild_server.project_arn]
-  # code_deploy_resources = [module.codedeploy_server.application_arn, module.codedeploy_server.deployment_group_arn, module.codedeploy_client.application_arn, module.codedeploy_client.deployment_group_arn]
-  
-  ecr_repositories      = [ module.ecr_client.ecr_repository_arn]
-  code_build_projects   = [module.codebuild_client.project_arn]
-  code_deploy_resources = [module.codedeploy_client.application_arn, module.codedeploy_client.deployment_group_arn]
-  
-
+data "aws_iam_role" "devops_role" {
+  name = "DevOps-Role"
 }
 
 # ------- Creating a SNS topic -------
@@ -327,7 +294,7 @@ module "sns" {
 module "codebuild_server" {
   source                 = "../Modules/CodeBuild"
   name                   = "codebuild-${var.environment_name}-server"
-  iam_role               = module.devops_role.arn_role
+  iam_role               = data.aws_iam_role.devops_role.arn
   region                 = var.aws_region
   account_id             = data.aws_caller_identity.id_current_account.account_id
   ecr_repo_url           = module.ecr_server.ecr_repository_url
@@ -344,7 +311,7 @@ module "codebuild_server" {
 module "codebuild_client" {
   source                 = "../Modules/CodeBuild"
   name                   = "codebuild-${var.environment_name}-client"
-  iam_role               = module.devops_role.arn_role
+  iam_role               = data.aws_iam_role.devops_role.arn
   region                 = var.aws_region
   account_id             = data.aws_caller_identity.id_current_account.account_id
   ecr_repo_url           = module.ecr_client.ecr_repository_url
@@ -388,7 +355,7 @@ module "codedeploy_client" {
 module "codepipeline" {
   source                   = "../Modules/CodePipeline"
   name                     = "pipeline-${var.environment_name}"
-  pipe_role                = module.devops_role.arn_role
+  pipe_role                = data.aws_iam_role.devops_role.arn
   s3_bucket                = module.s3_codepipeline.s3_bucket_id
   repo_owner               = var.repository_owner
   repo_name                = var.repository_name
@@ -397,14 +364,14 @@ module "codepipeline" {
   app_name         = module.codedeploy_client.application_name
   deployment_group  = module.codedeploy_client.deployment_group_name
 
-  depends_on = [module.policy_devops_role]
+
 }
 
 
 module "codepipeline_server" {
   source                   = "../Modules/CodePipeline"
   name                     = "pipeline-${var.environment_name}-backend"
-  pipe_role                = module.devops_role.arn_role
+  pipe_role                = data.aws_iam_role.devops_role.arn
   s3_bucket                = module.s3_codepipeline.s3_bucket_id
   repo_owner               = var.repository_owner
   repo_name                = var.repository_name_backend
@@ -414,7 +381,7 @@ module "codepipeline_server" {
   deployment_group  = module.codedeploy_server.deployment_group_name
 
 
-  depends_on = [module.policy_devops_role]
+
 }
 
 
