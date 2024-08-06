@@ -27,14 +27,10 @@ variable "environment_name" {
 variable "port_app_server" {
   description = "The port used by your server application"
   type        = number
-  default     = 8001
+  default     = 8501
 }
 
-variable "port_app_client" {
-  description = "The port used by your client application"
-  type        = number
-  default     = 80
-}
+
 
 variable "buildspec_path" {
   description = "The location of the buildspec file"
@@ -83,16 +79,12 @@ variable "repository_owner" {
 variable "repository_name" {
   description = "The name of the Github repository"
   type        = string
-  default     = "FirstAbuDhabiBank_POC_UI"
+  default     = "customer-onboarding-demo"
 }
-variable "repository_name_backend" {
-  description = "The name of the Github repository"
-  type        = string
-  default     = "FirstAbuDhabiBank_POC_1"
-}
+
 
 variable "repository_branch" {
   description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
   type        = string
-  default     = "dev"
+  default     = "main"
 }
