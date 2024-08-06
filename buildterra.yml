@@ -18,7 +18,7 @@ phases:
       - cd ${CODEBUILD_SRC_DIR}/Infrastructure/Tata_AIG
       - terraform init    
       - terraform plan
-      - terraform destroy -auto-approve
+      - terraform apply -auto-approve
 
 
       #####   terraform deploy ends   #####
