@@ -26,7 +26,9 @@ terraform {
 data "aws_vpc" "existing" {
   id = "vpc-00d22b17ac6cf513f"  
 }
-
+data "aws_ecs_cluster" "existing_cluster" {
+  cluster_name = "DS_CLUSTER"
+}
 
 variable "public_subnet" {
   type        = list(string)
@@ -158,7 +160,7 @@ module "ecs_service_server" {
   name                = "${var.environment_name}-server"
   desired_tasks       = 1
   arn_security_group  = module.security_group_ecs_task_server.sg_id
-  ecs_cluster_id      = module.ecs_cluster.ecs_cluster_id
+  ecs_cluster_id      = data.aws_ecs_cluster.existing_cluster.id
   arn_target_group    = module.target_group_server_blue.arn_tg
   arn_task_definition = module.ecs_taks_definition_server.arn_task_definition
   subnets_id          = var.private_server_subnet_ids
@@ -173,7 +175,7 @@ module "ecs_autoscaling_server" {
   depends_on   = [module.ecs_service_server]
   source       = "../Modules/ECS/Autoscaling"
   name         = "${var.environment_name}-server"
-  cluster_name = module.ecs_cluster.ecs_cluster_name
+  cluster_name = data.aws_ecs_cluster.existing_cluster.cluster_name
   min_capacity = 1
   max_capacity = 4
 }
@@ -222,7 +224,7 @@ module "codebuild_server" {
 module "codedeploy_server" {
   source          = "../Modules/CodeDeploy"
   name            = "Deploy-${var.environment_name}-server"
-  ecs_cluster     = module.ecs_cluster.ecs_cluster_name
+  ecs_cluster     = data.aws_ecs_cluster.existing_cluster.cluster_name
   ecs_service     = module.ecs_service_server.ecs_service_name
   alb_listener    = module.alb_server.arn_listener
   tg_blue         = module.target_group_server_blue.tg_name
