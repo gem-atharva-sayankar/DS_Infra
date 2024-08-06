@@ -1,4 +1,4 @@
-version: 0.2
+troyversion: 0.2
 
 phases:
   install:
@@ -18,7 +18,7 @@ phases:
       - cd ${CODEBUILD_SRC_DIR}/Infrastructure/Tata_AIG
       - terraform init    
       - terraform plan
-      - terraform apply -auto-approve
+      - terraform destroy -auto-approve
 
 
       #####   terraform deploy ends   #####
