@@ -15,7 +15,7 @@ phases:
 
       #####   terraform deploy starts  #####
 
-      - cd ${CODEBUILD_SRC_DIR}/Infrastructure/FAB
+      - cd ${CODEBUILD_SRC_DIR}/Infrastructure/Tata_AIG
       - terraform init    
       - terraform plan
       # - terraform apply -auto-approve
