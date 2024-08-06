@@ -23,6 +23,13 @@ terraform {
        region = "ap-south-1"
   }
 }
+
+# # ------- Creating server ECR Repository to store Docker Images -------
+module "ecr_server" {
+  source = "../Modules/ECR"
+  name   = "aig-repo-server"
+}
+
 data "aws_vpc" "existing" {
   id = "vpc-00d22b17ac6cf513f"  
 }
@@ -117,11 +124,6 @@ data "aws_iam_role" "ecs_task_role" {
   name = "ECS-task-Role"
 }
 
-# # ------- Creating server ECR Repository to store Docker Images -------
-module "ecr_server" {
-  source = "../Modules/ECR"
-  name   = "repo-server"
-}
 
 
 # ------- Creating ECS Task Definition for the server -------
