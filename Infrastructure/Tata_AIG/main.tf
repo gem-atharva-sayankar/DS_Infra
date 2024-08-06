@@ -31,7 +31,7 @@ module "ecr_server" {
 }
 
 data "aws_vpc" "existing" {
-  id = "vpc-00d22b17ac6cf513f"  
+  id = "vpc-0c62eb8b9476df8fd"  
 }
 data "aws_ecs_cluster" "existing_cluster" {
   cluster_name = "DS_CLUSTER"
