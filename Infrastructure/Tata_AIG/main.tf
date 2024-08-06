@@ -135,7 +135,7 @@ module "ecs_taks_definition_server" {
   task_role_arn      = data.aws_iam_role.ecs_task_role.arn
   cpu                = 1024
   memory             = "2048"
-  docker_repo        = "851725235990.dkr.ecr.ap-south-1.amazonaws.com/fab_dev:158"
+  docker_repo        = "851725235990.dkr.ecr.ap-south-1.amazonaws.com/aig-repo-server"
   region             = var.aws_region
   container_port     = var.port_app_server
 }
