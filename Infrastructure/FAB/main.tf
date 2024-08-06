@@ -80,31 +80,7 @@ module "target_group_server_green" {
   health_check_port   = var.port_app_server
 }
 
-# ------- Creating Target Group for the client ALB blue environment -------
-module "target_group_client_blue" {
-  source              = "../Modules/ALB"
-  create_target_group = true
-  name                = "tg-${var.environment_name}-c-b"
-  port                = 80
-  protocol            = "HTTP"
-  vpc                 = data.aws_vpc.existing.id
-  tg_type             = "ip"
-  health_check_path   = "/"
-  health_check_port   = var.port_app_client
-}
 
-# ------- Creating Target Group for the client ALB green environment -------
-module "target_group_client_green" {
-  source              = "../Modules/ALB"
-  create_target_group = true
-  name                = "tg-${var.environment_name}-c-g"
-  port                = 80
-  protocol            = "HTTP"
-  vpc                 = data.aws_vpc.existing.id
-  tg_type             = "ip"
-  health_check_path   = "/"
-  health_check_port   = var.port_app_client
-}
 
 # ------- Creating Security Group for the server ALB -------
 module "security_group_alb_server" {
@@ -116,15 +92,7 @@ module "security_group_alb_server" {
   ingress_port        = 80
 }
 
-# ------- Creating Security Group for the client ALB -------
-module "security_group_alb_client" {
-  source              = "../Modules/SecurityGroup"
-  name                = "alb-${var.environment_name}-client"
-  description         = "Controls access to the client ALB"
-  vpc_id              = data.aws_vpc.existing.id
-  cidr_blocks_ingress = ["0.0.0.0/0"]
-  ingress_port        = 80
-}
+
 
 # ------- Creating Server Application ALB -------
 module "alb_server" {
@@ -136,15 +104,7 @@ module "alb_server" {
   target_group   = module.target_group_server_blue.arn_tg
 }
 
-# ------- Creating Client Application ALB -------
-module "alb_client" {
-  source         = "../Modules/ALB"
-  create_alb     = true
-  name           = "${var.environment_name}-cli"
-  subnets        = var.public_subnet
-  security_group = module.security_group_alb_client.sg_id
-  target_group   = module.target_group_client_blue.arn_tg
-}
+
 
 # ------- ECS Role -------
 data "aws_iam_role" "ecs_task_execution_role" {
@@ -161,11 +121,6 @@ module "ecr_server" {
   name   = "repo-server"
 }
 
-# # ------- Creating client ECR Repository to store Docker Images -------
-module "ecr_client" {
-  source = "../Modules/ECR"
-  name   = "repo-client"
-}
 
 # ------- Creating ECS Task Definition for the server -------
 module "ecs_taks_definition_server" {
@@ -181,19 +136,7 @@ module "ecs_taks_definition_server" {
   container_port     = var.port_app_server
 }
 
-# ------- Creating ECS Task Definition for the client -------
-module "ecs_taks_definition_client" {
-  source             = "../Modules/ECS/TaskDefinition"
-  name               = "${var.environment_name}-client"
-  container_name     = var.container_name["client"]
-  execution_role_arn = data.aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn      = data.aws_iam_role.ecs_task_role.arn
-  cpu                = 1024
-  memory             = "2048"
-  docker_repo        = "851725235990.dkr.ecr.ap-south-1.amazonaws.com/fabfe:11"
-  region             = var.aws_region
-  container_port     = var.port_app_client
-}
+
 
 # ------- Creating a server Security Group for ECS TASKS -------
 module "security_group_ecs_task_server" {
@@ -204,21 +147,9 @@ module "security_group_ecs_task_server" {
   ingress_port    = var.port_app_server
   security_groups = [module.security_group_alb_server.sg_id]
 }
-# ------- Creating a client Security Group for ECS TASKS -------
-module "security_group_ecs_task_client" {
-  source          = "../Modules/SecurityGroup"
-  name            = "ecs-task-${var.environment_name}-client"
-  description     = "Controls access to the client ECS task"
-  vpc_id          = data.aws_vpc.existing.id
-  ingress_port    = var.port_app_client
-  security_groups = [module.security_group_alb_client.sg_id]
-}
 
-# ------- Creating ECS Cluster -------
-module "ecs_cluster" {
-  source = "../Modules/ECS/Cluster"
-  name   = var.environment_name
-}
+
+
 
 # ------- Creating ECS Service server -------
 module "ecs_service_server" {
@@ -235,20 +166,7 @@ module "ecs_service_server" {
   container_name      = var.container_name["server"]
 }
 
-# ------- Creating ECS Service client -------
-module "ecs_service_client" {
-  depends_on          = [module.alb_client]
-  source              = "../Modules/ECS/Service"
-  name                = "${var.environment_name}-client"
-  desired_tasks       = 1
-  arn_security_group  = module.security_group_ecs_task_client.sg_id
-  ecs_cluster_id      = module.ecs_cluster.ecs_cluster_id
-  arn_target_group    = module.target_group_client_blue.arn_tg
-  arn_task_definition = module.ecs_taks_definition_client.arn_task_definition
-  subnets_id          = var.private_client_subnet_ids
-  container_port      = var.port_app_client
-  container_name      = var.container_name["client"]
-}
+
 
 # ------- Creating ECS Autoscaling policies for the server application -------
 module "ecs_autoscaling_server" {
@@ -260,15 +178,6 @@ module "ecs_autoscaling_server" {
   max_capacity = 4
 }
 
-# ------- Creating ECS Autoscaling policies for the client application -------
-module "ecs_autoscaling_client" {
-  depends_on   = [module.ecs_service_client]
-  source       = "../Modules/ECS/Autoscaling"
-  name         = "${var.environment_name}-client"
-  cluster_name = module.ecs_cluster.ecs_cluster_name
-  min_capacity = 1
-  max_capacity = 4
-}
 
 # ------- CodePipeline -------
 
@@ -307,22 +216,7 @@ module "codebuild_server" {
   ecs_task_role          = var.iam_role_name["ecs_task_role"]
 }
 
-# ------- Creating the client CodeBuild project -------
-module "codebuild_client" {
-  source                 = "../Modules/CodeBuild"
-  name                   = "codebuild-${var.environment_name}-client"
-  iam_role               = data.aws_iam_role.devops_role.arn
-  region                 = var.aws_region
-  account_id             = data.aws_caller_identity.id_current_account.account_id
-  ecr_repo_url           = module.ecr_client.ecr_repository_url
-  folder_path            = var.folder_path_client
-  buildspec_path         = var.buildspec_path
-  task_definition_family = module.ecs_taks_definition_client.task_definition_family
-  container_name         = var.container_name["client"]
-  service_port           = var.port_app_client
-  ecs_role               = var.iam_role_name["ecs"]
-  server_alb_url         = module.alb_server.dns_alb
-}
+
 
 # ------- Creating the server CodeDeploy project -------
 module "codedeploy_server" {
@@ -337,35 +231,10 @@ module "codedeploy_server" {
   codedeploy_role = data.aws_iam_role.devops_role.arn
 }
 
-# ------- Creating the client CodeDeploy project -------
-module "codedeploy_client" {
-  source          = "../Modules/CodeDeploy"
-  name            = "Deploy-${var.environment_name}-client"
-  ecs_cluster     = module.ecs_cluster.ecs_cluster_name
-  ecs_service     = module.ecs_service_client.ecs_service_name
-  alb_listener    = module.alb_client.arn_listener
-  tg_blue         = module.target_group_client_blue.tg_name
-  tg_green        = module.target_group_client_green.tg_name
-  sns_topic_arn   = module.sns.sns_arn
-  codedeploy_role = data.aws_iam_role.devops_role.arn
-}
+
 
 # ------- Creating CodePipeline -------
 
-module "codepipeline" {
-  source                   = "../Modules/CodePipeline"
-  name                     = "pipeline-${var.environment_name}"
-  pipe_role                = data.aws_iam_role.devops_role.arn
-  s3_bucket                = module.s3_codepipeline.s3_bucket_id
-  repo_owner               = var.repository_owner
-  repo_name                = var.repository_name
-  branch                   = var.repository_branch
-  codebuild_project = module.codebuild_client.project_id
-  app_name         = module.codedeploy_client.application_name
-  deployment_group  = module.codedeploy_client.deployment_group_name
-
-
-}
 
 
 module "codepipeline_server" {
@@ -379,9 +248,6 @@ module "codepipeline_server" {
   codebuild_project = module.codebuild_server.project_id
   app_name          = module.codedeploy_server.application_name
   deployment_group  = module.codedeploy_server.deployment_group_name
-
-
-
 }
 
 
