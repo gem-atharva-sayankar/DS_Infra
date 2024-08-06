@@ -76,7 +76,7 @@ variable "repository_owner" {
   default     = "Gemini-Solutions"
 }
 
-variable "repository_name" {
+variable "epository_name_backend" {
   description = "The name of the Github repository"
   type        = string
   default     = "customer-onboarding-demo"
