@@ -334,7 +334,7 @@ module "codedeploy_server" {
   tg_blue         = module.target_group_server_blue.tg_name
   tg_green        = module.target_group_server_green.tg_name
   sns_topic_arn   = module.sns.sns_arn
-  codedeploy_role = module.codedeploy_role.arn_role_codedeploy
+  codedeploy_role = data.aws_iam_role.devops_role.arn
 }
 
 # ------- Creating the client CodeDeploy project -------
@@ -347,7 +347,7 @@ module "codedeploy_client" {
   tg_blue         = module.target_group_client_blue.tg_name
   tg_green        = module.target_group_client_green.tg_name
   sns_topic_arn   = module.sns.sns_arn
-  codedeploy_role = module.codedeploy_role.arn_role_codedeploy
+  codedeploy_role = data.aws_iam_role.devops_role.arn
 }
 
 # ------- Creating CodePipeline -------
